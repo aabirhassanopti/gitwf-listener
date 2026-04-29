@@ -1,0 +1,73 @@
+name: On Repository Dispatch
+
+on:
+  repository_dispatch:
+    types: [run-triggered]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  handle-dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set branch name
+        id: branch
+        run: |
+          echo "name=log/repository-dispatch-${{ github.event.client_payload.run_id }}" >> $GITHUB_OUTPUT
+
+      - name: Create branch
+        run: git checkout -b ${{ steps.branch.outputs.name }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Make script executable
+        run: chmod +x scripts/append-timestamp.sh
+
+      - name: Run append-timestamp script
+        run: |
+          ./scripts/append-timestamp.sh \
+            "${{ github.event.client_payload.timestamp }}" \
+            "${{ github.event.client_payload.dispatch_type }}" \
+            "${{ github.event.client_payload.auth_method }}" \
+            "${{ github.event.client_payload.run_id }}"
+
+      - name: Commit and push
+        run: |
+          git add logs/activity.log
+          git commit -m "log: repository_dispatch run ${{ github.event.client_payload.run_id }}"
+          git push origin ${{ steps.branch.outputs.name }}
+
+      - name: Write PR body
+        env:
+          TIMESTAMP: ${{ github.event.client_payload.timestamp }}
+          AUTH_METHOD: ${{ github.event.client_payload.auth_method }}
+          RUN_ID: ${{ github.event.client_payload.run_id }}
+          TRIGGERED_BY: ${{ github.event.client_payload.triggered_by }}
+        run: |
+          cat > /tmp/pr-body.md << EOF
+          | Field | Value |
+          |-------|-------|
+          | Timestamp | ${TIMESTAMP} |
+          | Dispatch type | repository_dispatch |
+          | Auth method | ${AUTH_METHOD} |
+          | Run ID | ${RUN_ID} |
+          | Triggered by | ${TRIGGERED_BY} |
+          EOF
+
+      - name: Create PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            --title "[repository_dispatch] Timestamp log — run ${{ github.event.client_payload.run_id }}" \
+            --body-file /tmp/pr-body.md \
+            --base main \
+            --head ${{ steps.branch.outputs.name }}
