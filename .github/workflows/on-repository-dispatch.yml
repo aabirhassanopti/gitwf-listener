@@ -23,7 +23,9 @@ jobs:
           echo "name=log/repository-dispatch-${RUN_ID}" >> "$GITHUB_OUTPUT"
 
       - name: Create branch
-        run: git checkout -b "${{ steps.branch.outputs.name }}"
+        env:
+          BRANCH: ${{ steps.branch.outputs.name }}
+        run: git checkout -b "$BRANCH"
 
       - name: Configure git
         run: |
