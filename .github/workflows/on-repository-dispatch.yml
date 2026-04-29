@@ -19,8 +19,9 @@ jobs:
         id: branch
         env:
           RUN_ID: ${{ github.event.client_payload.run_id }}
+          AUTH_METHOD: ${{ github.event.client_payload.auth_method }}
         run: |
-          echo "name=log/repository-dispatch-${RUN_ID}" >> "$GITHUB_OUTPUT"
+          echo "name=log/repository-dispatch-${AUTH_METHOD}-${RUN_ID}" >> "$GITHUB_OUTPUT"
 
       - name: Create branch
         env:

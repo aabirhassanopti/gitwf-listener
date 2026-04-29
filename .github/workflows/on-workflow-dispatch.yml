@@ -39,8 +39,9 @@ jobs:
         id: branch
         env:
           RUN_ID: ${{ inputs.run_id }}
+          AUTH_METHOD: ${{ inputs.auth_method }}
         run: |
-          echo "name=log/workflow-dispatch-${RUN_ID}" >> "$GITHUB_OUTPUT"
+          echo "name=log/workflow-dispatch-${AUTH_METHOD}-${RUN_ID}" >> "$GITHUB_OUTPUT"
 
       - name: Create branch
         env:
