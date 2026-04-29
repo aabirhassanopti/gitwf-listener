@@ -1,2 +1,3 @@
 # Cross-repo dispatch activity log
 # Format: [<ISO-8601>] dispatch_type=<type> auth=<method> run_id=<id>
+[2026-04-29T11:12:57Z] dispatch_type=workflow_dispatch auth=pat run_id=25105588858
