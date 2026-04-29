@@ -17,8 +17,10 @@ jobs:
 
       - name: Set branch name
         id: branch
+        env:
+          RUN_ID: ${{ github.event.client_payload.run_id }}
         run: |
-          echo "name=log/repository-dispatch-${{ github.event.client_payload.run_id }}" >> $GITHUB_OUTPUT
+          echo "name=log/repository-dispatch-${RUN_ID}" >> "$GITHUB_OUTPUT"
 
       - name: Create branch
         run: git checkout -b "${{ steps.branch.outputs.name }}"
@@ -73,9 +75,11 @@ jobs:
       - name: Create PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ github.event.client_payload.run_id }}
+          BRANCH: ${{ steps.branch.outputs.name }}
         run: |
           gh pr create \
-            --title "[repository_dispatch] Timestamp log — run ${{ github.event.client_payload.run_id }}" \
+            --title "[repository_dispatch] Timestamp log — run ${RUN_ID}" \
             --body-file /tmp/pr-body.md \
             --base main \
-            --head ${{ steps.branch.outputs.name }}
+            --head "$BRANCH"
