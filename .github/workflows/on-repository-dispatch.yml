@@ -21,7 +21,7 @@ jobs:
           echo "name=log/repository-dispatch-${{ github.event.client_payload.run_id }}" >> $GITHUB_OUTPUT
 
       - name: Create branch
-        run: git checkout -b ${{ steps.branch.outputs.name }}
+        run: git checkout -b "${{ steps.branch.outputs.name }}"
 
       - name: Configure git
         run: |
@@ -32,18 +32,26 @@ jobs:
         run: chmod +x scripts/append-timestamp.sh
 
       - name: Run append-timestamp script
+        env:
+          TIMESTAMP: ${{ github.event.client_payload.timestamp }}
+          DISPATCH_TYPE: ${{ github.event.client_payload.dispatch_type }}
+          AUTH_METHOD: ${{ github.event.client_payload.auth_method }}
+          RUN_ID: ${{ github.event.client_payload.run_id }}
         run: |
           ./scripts/append-timestamp.sh \
-            "${{ github.event.client_payload.timestamp }}" \
-            "${{ github.event.client_payload.dispatch_type }}" \
-            "${{ github.event.client_payload.auth_method }}" \
-            "${{ github.event.client_payload.run_id }}"
+            "$TIMESTAMP" \
+            "$DISPATCH_TYPE" \
+            "$AUTH_METHOD" \
+            "$RUN_ID"
 
       - name: Commit and push
+        env:
+          RUN_ID: ${{ github.event.client_payload.run_id }}
+          BRANCH: ${{ steps.branch.outputs.name }}
         run: |
           git add logs/activity.log
-          git commit -m "log: repository_dispatch run ${{ github.event.client_payload.run_id }}"
-          git push origin ${{ steps.branch.outputs.name }}
+          git commit -m "log: repository_dispatch run ${RUN_ID}"
+          git push origin "$BRANCH"
 
       - name: Write PR body
         env:
